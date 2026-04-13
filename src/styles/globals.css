@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Brand — deep slate-navy */
+  --color-brand-900: #0f2233;
+  --color-brand-800: #1a3347;
+  --color-brand-700: #22435e;
+  --color-brand-600: #1a5a82;
+  --color-brand-500: #1d6fa4;
+  --color-brand-400: #3b8ec4;
+  --color-brand-100: #dbeafe;
+  --color-brand-50:  #eff6ff;
+
+  /* Accent — amber */
+  --color-accent-600: #b45309;
+  --color-accent-500: #d97706;
+  --color-accent-400: #f59e0b;
+  --color-accent-100: #fef3c7;
+
+  /* Semantic */
+  --color-success: #16a34a;
+  --color-success-bg: #dcfce7;
+  --color-danger:  #dc2626;
+  --color-danger-bg: #fee2e2;
+  --color-warning: #ca8a04;
+  --color-warning-bg: #fefce8;
+
+  /* Surface / Neutral */
+  --color-surface:          #f1f5f9;
+  --color-surface-card:     #ffffff;
+  --color-border:           #e2e8f0;
+  --color-text-primary:     #0f172a;
+  --color-text-secondary:   #64748b;
+  --color-text-muted:       #94a3b8;
+
+  /* Typography */
+  --font-display: 'Sora', system-ui, sans-serif;
+  --font-sans:    'Inter', system-ui, sans-serif;
+
+  /* Radius */
+  --radius:    0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
