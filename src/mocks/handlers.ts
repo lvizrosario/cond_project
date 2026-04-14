@@ -9,7 +9,7 @@ import { mockDocumentos } from './data/documentos.mock'
 import { mockReunioes } from './data/reunioes.mock'
 import { mockAdministradora } from './data/administradora.mock'
 import { mockConfiguracoes } from './data/configuracoes.mock'
-import type { CreateReservationPayload, AreaCondominio } from '@/types/reservas.types'
+import type { CreateReservationPayload, AreaCondominio, RejectReservationPayload } from '@/types/reservas.types'
 import type { AvisoPayload } from '@/types/avisos.types'
 import type { CorrespondenciaPayload } from '@/types/correspondencias.types'
 import type { DocumentoPayload, DocumentoVersionPayload } from '@/types/documentos.types'
@@ -52,10 +52,20 @@ function getLinkedAreaLabel(area: AreaCondominio) {
   return area === 'churrasqueira' ? 'a churrasqueira' : 'o salao de festas'
 }
 
+function isBlockingReservationStatus(status: string) {
+  return status === 'pendente' || status === 'confirmada'
+}
+
+function getReservationOptions() {
+  return {
+    tiposEventoPermitidos: configuracoes.reservas.tiposEventoPermitidos,
+  }
+}
+
 function getReservationAvailability(area: AreaCondominio) {
   const linkedArea = LINKED_RESERVATION_AREAS[area]
   const statuses = reservations
-    .filter((reservation) => reservation.status !== 'cancelada')
+    .filter((reservation) => isBlockingReservationStatus(reservation.status))
     .flatMap((reservation) => {
       const date = toDateKey(reservation.dataInicio)
       const items: Array<Record<string, string>> = []
@@ -100,7 +110,7 @@ function hasReservationConflict(payload: CreateReservationPayload) {
   const requestedDate = toDateKey(payload.dataInicio)
 
   return reservations.some((reservation) => {
-    if (reservation.status === 'cancelada') return false
+    if (!isBlockingReservationStatus(reservation.status)) return false
     if (reservation.area === payload.area) {
       return hasTimeOverlap(reservation.dataInicio, reservation.dataFim, payload.dataInicio, payload.dataFim)
     }
@@ -168,8 +178,15 @@ export const handlers = [
     return HttpResponse.json(getReservationAvailability(params.area as AreaCondominio))
   }),
 
+  http.get('/api/reservas/options', () => {
+    return HttpResponse.json(getReservationOptions())
+  }),
+
   http.post('/api/reservas', async ({ request }) => {
     const body = await request.json() as CreateReservationPayload
+    if (!body.tipoEvento || !getReservationOptions().tiposEventoPermitidos.includes(body.tipoEvento)) {
+      return HttpResponse.json({ message: 'O tipo de evento informado nao esta habilitado nas configuracoes do condominio' }, { status: 400 })
+    }
     if (new Date(body.dataFim) <= new Date(body.dataInicio)) {
       return HttpResponse.json({ message: 'O termino deve ser posterior ao inicio' }, { status: 400 })
     }
@@ -187,6 +204,9 @@ export const handlers = [
       criadoEm: new Date().toISOString(),
       aprovadoEm: null,
       aprovadoPorId: null,
+      recusadoEm: null,
+      recusadoPorId: null,
+      motivoRecusa: null,
     }
     reservations.push(newReservation)
     return HttpResponse.json(newReservation, { status: 201 })
@@ -197,6 +217,9 @@ export const handlers = [
     if (idx === -1) return HttpResponse.json({ message: 'Reserva nao encontrada' }, { status: 404 })
 
     const target = reservations[idx]
+    if (target.status !== 'pendente') {
+      return HttpResponse.json({ message: 'Apenas reservas pendentes podem ser aprovadas' }, { status: 400 })
+    }
     const linkedArea = LINKED_RESERVATION_AREAS[target.area]
     const targetDate = toDateKey(target.dataInicio)
     const hasConflict = reservations.some((reservation) => {
@@ -214,7 +237,39 @@ export const handlers = [
       return HttpResponse.json({ message: 'Nao foi possivel aprovar porque existe outra reserva confirmada conflitante' }, { status: 400 })
     }
 
-    reservations[idx] = { ...target, status: 'confirmada', aprovadoEm: new Date().toISOString(), aprovadoPorId: '2' }
+    reservations[idx] = {
+      ...target,
+      status: 'confirmada',
+      aprovadoEm: new Date().toISOString(),
+      aprovadoPorId: '2',
+      recusadoEm: null,
+      recusadoPorId: null,
+      motivoRecusa: null,
+    }
+    return HttpResponse.json(reservations[idx])
+  }),
+
+  http.post('/api/reservas/:id/reject', async ({ params, request }) => {
+    const body = await request.json() as RejectReservationPayload
+    const idx = reservations.findIndex((r) => r.id === params.id)
+    if (idx === -1) return HttpResponse.json({ message: 'Reserva nao encontrada' }, { status: 404 })
+    if (reservations[idx].status !== 'pendente') {
+      return HttpResponse.json({ message: 'Apenas reservas pendentes podem ser recusadas' }, { status: 400 })
+    }
+    if (!body.motivo?.trim()) {
+      return HttpResponse.json({ message: 'Informe o motivo da recusa' }, { status: 400 })
+    }
+
+    reservations[idx] = {
+      ...reservations[idx],
+      status: 'recusada',
+      aprovadoEm: null,
+      aprovadoPorId: null,
+      recusadoEm: new Date().toISOString(),
+      recusadoPorId: '2',
+      motivoRecusa: body.motivo.trim(),
+    }
+
     return HttpResponse.json(reservations[idx])
   }),
 

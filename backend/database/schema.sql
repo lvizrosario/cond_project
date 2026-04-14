@@ -112,6 +112,7 @@ create table reservas (
   id bigserial primary key,
   tenant_id text not null references tenants(id),
   area text not null,
+  tipo_evento text not null,
   morador_id text not null references users(id),
   data_inicio timestamptz not null,
   data_fim timestamptz not null,
@@ -119,6 +120,9 @@ create table reservas (
   observacoes text,
   aprovado_em timestamptz,
   aprovado_por text references users(id),
+  recusado_em timestamptz,
+  recusado_por text references users(id),
+  motivo_recusa text,
   criado_em timestamptz not null default now()
 );
 

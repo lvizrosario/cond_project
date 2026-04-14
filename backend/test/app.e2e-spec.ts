@@ -34,6 +34,7 @@ describe('Backend foundation (e2e)', () => {
       .set('X-Condominio-ID', 'cond-1')
       .send({
         area: 'quadra',
+        tipoEvento: 'Reuniao esportiva',
         dataInicio: '2026-04-23T18:00:00Z',
         dataFim: '2026-04-23T20:00:00Z',
         observacoes: 'Treino da noite',
@@ -52,6 +53,31 @@ describe('Backend foundation (e2e)', () => {
     expect(approved.body.aprovadoPorId).toBeDefined()
   })
 
+  it('allows admin rejection with justification', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/api/reservas')
+      .set('Authorization', 'Bearer seed-token-4')
+      .set('X-Condominio-ID', 'cond-1')
+      .send({
+        area: 'quadra',
+        tipoEvento: 'Reuniao esportiva',
+        dataInicio: '2026-04-24T18:00:00Z',
+        dataFim: '2026-04-24T20:00:00Z',
+        observacoes: 'Treino extra',
+      })
+      .expect(201)
+
+    const rejected = await request(app.getHttpServer())
+      .post(`/api/reservas/${created.body.id}/reject`)
+      .set('Authorization', 'Bearer seed-token-2')
+      .set('X-Condominio-ID', 'cond-1')
+      .send({ motivo: 'Horario indisponivel por manutencao' })
+      .expect(201)
+
+    expect(rejected.body.status).toBe('recusada')
+    expect(rejected.body.motivoRecusa).toBe('Horario indisponivel por manutencao')
+  })
+
   it('blocks churrasqueira and salao on the same day', async () => {
     await request(app.getHttpServer())
       .post('/api/reservas')
@@ -59,6 +85,7 @@ describe('Backend foundation (e2e)', () => {
       .set('X-Condominio-ID', 'cond-1')
       .send({
         area: 'salao_festas',
+        tipoEvento: 'Confraternizacao',
         dataInicio: '2026-04-25T15:00:00Z',
         dataFim: '2026-04-25T20:00:00Z',
       })
@@ -70,6 +97,7 @@ describe('Backend foundation (e2e)', () => {
       .set('X-Condominio-ID', 'cond-1')
       .send({
         area: 'churrasqueira',
+        tipoEvento: 'Churrasco em familia',
         dataInicio: '2026-04-25T10:00:00Z',
         dataFim: '2026-04-25T14:00:00Z',
       })

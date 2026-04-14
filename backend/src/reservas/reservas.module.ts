@@ -7,14 +7,19 @@ import type { AuthUser } from '../common/interfaces/request-with-user.interface'
 import { MockDatabaseService } from '../config/mock-database.service'
 
 type AreaCondominio = 'salao_festas' | 'churrasqueira' | 'quadra'
-type ReservationStatus = 'confirmada' | 'pendente' | 'cancelada'
+type ReservationStatus = 'confirmada' | 'pendente' | 'recusada' | 'cancelada'
 type AvailabilityStatus = 'confirmada' | 'pendente' | 'bloqueada'
 
 interface ReservationPayload {
   area: AreaCondominio
+  tipoEvento: string
   dataInicio: string
   dataFim: string
   observacoes?: string
+}
+
+interface RejectReservationPayload {
+  motivo: string
 }
 
 const LINKED_AREAS: Partial<Record<AreaCondominio, AreaCondominio>> = {
@@ -39,8 +44,16 @@ class ReservasService {
       .sort((a, b) => a.dataInicio.localeCompare(b.dataInicio))
   }
 
+  getOptions(user: AuthUser) {
+    return {
+      tiposEventoPermitidos: this.getAllowedEventTypes(user.tenantId),
+    }
+  }
+
   getAvailability(user: AuthUser, area: AreaCondominio) {
-    const activeReservations = this.db.reservas.filter((item) => item.tenantId === user.tenantId && item.status !== 'cancelada')
+    const activeReservations = this.db.reservas.filter(
+      (item) => item.tenantId === user.tenantId && (item.status === 'pendente' || item.status === 'confirmada'),
+    )
     const linkedArea = LINKED_AREAS[area]
 
     const statuses = activeReservations.flatMap((reservation) => {
@@ -51,7 +64,7 @@ class ReservasService {
         items.push({
           date,
           status: reservation.status,
-          label: reservation.status === 'pendente' ? 'Aguardando aprovação do administrador' : 'Reserva confirmada',
+          label: reservation.status === 'pendente' ? 'Aguardando aprovacao do administrador' : 'Reserva confirmada',
           reservationId: reservation.id,
           relatedArea: reservation.area,
         })
@@ -61,7 +74,7 @@ class ReservasService {
         items.push({
           date,
           status: 'bloqueada' satisfies AvailabilityStatus,
-          label: `Bloqueado porque ${this.getAreaLabel(linkedArea)} está ${reservation.status === 'pendente' ? 'com solicitação pendente' : 'reservada'} no mesmo dia`,
+          label: `Bloqueado porque ${this.getAreaLabel(linkedArea)} esta ${reservation.status === 'pendente' ? 'com solicitacao pendente' : 'reservada'} no mesmo dia`,
           reservationId: reservation.id,
           relatedArea: linkedArea,
         })
@@ -89,6 +102,7 @@ class ReservasService {
 
   create(user: AuthUser, payload: ReservationPayload) {
     this.assertReservationWindow(payload)
+    this.assertValidEventType(user.tenantId, payload.tipoEvento)
     this.assertNoConflicts(user.tenantId, payload)
 
     const resident = this.db.users.find((item) => item.id === user.id)
@@ -96,6 +110,7 @@ class ReservasService {
       id: `rv${this.db.reservas.length + 1}`,
       tenantId: user.tenantId,
       area: payload.area,
+      tipoEvento: payload.tipoEvento,
       moradorId: user.id,
       moradorNome: resident?.nomeCompleto ?? 'Morador',
       unidade: resident ? `${resident.tenantId === 'cond-1' ? resident.id : '00'}` : '00',
@@ -106,24 +121,24 @@ class ReservasService {
       criadoEm: new Date().toISOString(),
       aprovadoEm: null,
       aprovadoPorId: null,
+      recusadoEm: null,
+      recusadoPorId: null,
+      motivoRecusa: null,
     }
 
     this.db.reservas.push(created)
-    this.db.notifications.unshift({
-      id: `n${this.db.notifications.length + 1}`,
-      tenantId: user.tenantId,
-      userId: '2',
-      titulo: 'Nova solicitação de reserva pendente',
-      conteudo: `${created.moradorNome} solicitou ${this.getAreaLabel(created.area)} para ${this.toDateKey(created.dataInicio)}.`,
-      createdAt: new Date().toISOString(),
-    })
+    this.notifyAdmins(
+      user.tenantId,
+      'Nova solicitacao de reserva pendente',
+      `${created.moradorNome} solicitou ${this.getAreaLabel(created.area)} para ${this.toDateKey(created.dataInicio)}.`,
+    )
 
     return created
   }
 
   approve(user: AuthUser, id: string) {
     const reservation = this.db.reservas.find((item) => item.id === id)
-    if (!reservation) throw new BadRequestException('Reserva não encontrada')
+    if (!reservation) throw new BadRequestException('Reserva nao encontrada')
     if (reservation.status !== 'pendente') throw new BadRequestException('Apenas reservas pendentes podem ser aprovadas')
 
     this.assertNoApprovalConflicts(reservation)
@@ -131,6 +146,9 @@ class ReservasService {
     reservation.status = 'confirmada'
     reservation.aprovadoEm = new Date().toISOString()
     reservation.aprovadoPorId = user.id
+    reservation.recusadoEm = null
+    reservation.recusadoPorId = null
+    reservation.motivoRecusa = null
 
     const resident = this.db.users.find((item) => item.id === reservation.moradorId)
     if (resident) {
@@ -148,7 +166,7 @@ class ReservasService {
         tenantId: reservation.tenantId,
         to: resident.email,
         subject: 'Sua reserva foi confirmada',
-        body: `Olá, ${resident.nomeCompleto}. Sua reserva para ${this.getAreaLabel(reservation.area)} em ${this.toDateKey(reservation.dataInicio)} foi aprovada.`,
+        body: `Ola, ${resident.nomeCompleto}. Sua reserva para ${this.getAreaLabel(reservation.area)} em ${this.toDateKey(reservation.dataInicio)} foi aprovada.`,
         createdAt: new Date().toISOString(),
         type: 'reserva_aprovada',
       })
@@ -157,16 +175,66 @@ class ReservasService {
     return reservation
   }
 
+  reject(user: AuthUser, id: string, payload: RejectReservationPayload) {
+    const reservation = this.db.reservas.find((item) => item.id === id)
+    if (!reservation) throw new BadRequestException('Reserva nao encontrada')
+    if (reservation.status !== 'pendente') throw new BadRequestException('Apenas reservas pendentes podem ser recusadas')
+
+    const motivo = payload.motivo?.trim()
+    if (!motivo) throw new BadRequestException('Informe o motivo da recusa')
+
+    reservation.status = 'recusada'
+    reservation.recusadoEm = new Date().toISOString()
+    reservation.recusadoPorId = user.id
+    reservation.motivoRecusa = motivo
+    reservation.aprovadoEm = null
+    reservation.aprovadoPorId = null
+
+    const resident = this.db.users.find((item) => item.id === reservation.moradorId)
+    if (resident) {
+      this.db.notifications.unshift({
+        id: `n${this.db.notifications.length + 1}`,
+        tenantId: reservation.tenantId,
+        userId: resident.id,
+        titulo: 'Reserva recusada',
+        conteudo: `${this.getAreaLabel(reservation.area)} nao foi aprovada. Motivo: ${motivo}.`,
+        createdAt: new Date().toISOString(),
+      })
+
+      this.db.emailOutbox.unshift({
+        id: `mail${this.db.emailOutbox.length + 1}`,
+        tenantId: reservation.tenantId,
+        to: resident.email,
+        subject: 'Sua reserva foi recusada',
+        body: `Ola, ${resident.nomeCompleto}. Sua solicitacao para ${this.getAreaLabel(reservation.area)} em ${this.toDateKey(reservation.dataInicio)} foi recusada. Motivo: ${motivo}.`,
+        createdAt: new Date().toISOString(),
+        type: 'reserva_recusada',
+      })
+    }
+
+    return reservation
+  }
+
   cancel(id: string) {
     const reservation = this.db.reservas.find((item) => item.id === id)
-    if (!reservation) throw new BadRequestException('Reserva não encontrada')
+    if (!reservation) throw new BadRequestException('Reserva nao encontrada')
     reservation.status = 'cancelada'
     return reservation
   }
 
   private assertReservationWindow(payload: ReservationPayload) {
     if (new Date(payload.dataFim) <= new Date(payload.dataInicio)) {
-      throw new BadRequestException('O término deve ser posterior ao início')
+      throw new BadRequestException('O termino deve ser posterior ao inicio')
+    }
+  }
+
+  private assertValidEventType(tenantId: string, tipoEvento: string) {
+    const allowedEventTypes = this.getAllowedEventTypes(tenantId)
+    if (!tipoEvento?.trim()) {
+      throw new BadRequestException('Selecione o tipo de evento')
+    }
+    if (!allowedEventTypes.includes(tipoEvento)) {
+      throw new BadRequestException('O tipo de evento informado nao esta habilitado nas configuracoes do condominio')
     }
   }
 
@@ -175,7 +243,7 @@ class ReservasService {
     const payloadDate = this.toDateKey(payload.dataInicio)
 
     const hasConflict = this.db.reservas.some((reservation) => {
-      if (reservation.tenantId !== tenantId || reservation.status === 'cancelada') return false
+      if (reservation.tenantId !== tenantId || !this.isBlockingStatus(reservation.status)) return false
 
       if (reservation.area === payload.area) {
         return this.hasTimeOverlap(reservation.dataInicio, reservation.dataFim, payload.dataInicio, payload.dataFim)
@@ -189,7 +257,7 @@ class ReservasService {
     })
 
     if (hasConflict) {
-      throw new BadRequestException('Este período não está disponível para reserva ou está bloqueado por outra área vinculada')
+      throw new BadRequestException('Este periodo nao esta disponivel para reserva ou esta bloqueado por outra area vinculada')
     }
   }
 
@@ -212,8 +280,34 @@ class ReservasService {
     })
 
     if (hasConflict) {
-      throw new BadRequestException('Não foi possível aprovar porque existe outra reserva confirmada conflitante')
+      throw new BadRequestException('Nao foi possivel aprovar porque existe outra reserva confirmada conflitante')
     }
+  }
+
+  private getAllowedEventTypes(tenantId: string) {
+    if (this.db.configuracoes.tenantId !== tenantId) return []
+    return this.db.configuracoes.reservas.tiposEventoPermitidos ?? []
+  }
+
+  private notifyAdmins(tenantId: string, titulo: string, conteudo: string) {
+    const admins = this.db.users.filter(
+      (item) => item.tenantId === tenantId && (item.primaryRole === 'presidente' || item.primaryRole === 'sindico'),
+    )
+
+    admins.forEach((admin) => {
+      this.db.notifications.unshift({
+        id: `n${this.db.notifications.length + 1}`,
+        tenantId,
+        userId: admin.id,
+        titulo,
+        conteudo,
+        createdAt: new Date().toISOString(),
+      })
+    })
+  }
+
+  private isBlockingStatus(status: ReservationStatus) {
+    return status === 'pendente' || status === 'confirmada'
   }
 
   private hasTimeOverlap(startA: string, endA: string, startB: string, endB: string) {
@@ -229,7 +323,7 @@ class ReservasService {
   }
 
   private getAreaLabel(area: AreaCondominio) {
-    if (area === 'salao_festas') return 'Salão de Festas'
+    if (area === 'salao_festas') return 'Salao de Festas'
     if (area === 'churrasqueira') return 'Churrasqueira'
     return 'Quadra Esportiva'
   }
@@ -253,6 +347,12 @@ class ReservasController {
     return this.reservasService.list(user, area, moradorId)
   }
 
+  @Get('options')
+  @Policy('authenticated')
+  getOptions(@CurrentUser() user: AuthUser) {
+    return this.reservasService.getOptions(user)
+  }
+
   @Get('availability/:area')
   @Policy('authenticated')
   getAvailability(@CurrentUser() user: AuthUser, @Param('area') area: AreaCondominio) {
@@ -269,6 +369,12 @@ class ReservasController {
   @Policy('admin')
   approve(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.reservasService.approve(user, id)
+  }
+
+  @Post(':id/reject')
+  @Policy('admin')
+  reject(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() body: RejectReservationPayload) {
+    return this.reservasService.reject(user, id, body)
   }
 
   @Patch(':id/cancel')

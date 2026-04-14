@@ -35,9 +35,9 @@ export class MockDatabaseService {
     { id: 'r1', tenantId: 'cond-1', titulo: 'Assembleia ordinaria', descricao: 'Pauta mensal do condominio', local: 'Salao de festas', status: 'publicada', dataHora: new Date().toISOString(), agenda: ['Prestacao de contas'], participantes: [], ata: null },
   ]
   reservas: Array<Record<string, any>> = [
-    { id: 'rv1', tenantId: 'cond-1', area: 'salao_festas', moradorId: '4', moradorNome: 'Ana Paula Mendes', unidade: 'A-22', dataInicio: '2026-04-20T14:00:00Z', dataFim: '2026-04-20T22:00:00Z', status: 'confirmada', criadoEm: '2026-04-09T11:15:00Z', aprovadoEm: '2026-04-10T09:00:00Z', aprovadoPorId: '2' },
-    { id: 'rv2', tenantId: 'cond-1', area: 'churrasqueira', moradorId: '3', moradorNome: 'Roberto Alves', unidade: 'C-03', dataInicio: '2026-04-13T11:00:00Z', dataFim: '2026-04-13T17:00:00Z', status: 'confirmada', criadoEm: '2026-04-07T20:10:00Z', aprovadoEm: '2026-04-08T10:00:00Z', aprovadoPorId: '2' },
-    { id: 'rv3', tenantId: 'cond-1', area: 'quadra', moradorId: '1', moradorNome: 'Carlos Eduardo Lima', unidade: 'A-10', dataInicio: '2026-04-18T08:00:00Z', dataFim: '2026-04-18T10:00:00Z', status: 'pendente', criadoEm: '2026-04-12T18:00:00Z', aprovadoEm: null, aprovadoPorId: null },
+    { id: 'rv1', tenantId: 'cond-1', area: 'salao_festas', tipoEvento: 'Aniversario', moradorId: '4', moradorNome: 'Ana Paula Mendes', unidade: 'A-22', dataInicio: '2026-04-20T14:00:00Z', dataFim: '2026-04-20T22:00:00Z', status: 'confirmada', criadoEm: '2026-04-09T11:15:00Z', aprovadoEm: '2026-04-10T09:00:00Z', aprovadoPorId: '2', recusadoEm: null, recusadoPorId: null, motivoRecusa: null },
+    { id: 'rv2', tenantId: 'cond-1', area: 'churrasqueira', tipoEvento: 'Churrasco em familia', moradorId: '3', moradorNome: 'Roberto Alves', unidade: 'C-03', dataInicio: '2026-04-13T11:00:00Z', dataFim: '2026-04-13T17:00:00Z', status: 'confirmada', criadoEm: '2026-04-07T20:10:00Z', aprovadoEm: '2026-04-08T10:00:00Z', aprovadoPorId: '2', recusadoEm: null, recusadoPorId: null, motivoRecusa: null },
+    { id: 'rv3', tenantId: 'cond-1', area: 'quadra', tipoEvento: 'Reuniao esportiva', moradorId: '1', moradorNome: 'Carlos Eduardo Lima', unidade: 'A-10', dataInicio: '2026-04-18T08:00:00Z', dataFim: '2026-04-18T10:00:00Z', status: 'pendente', criadoEm: '2026-04-12T18:00:00Z', aprovadoEm: null, aprovadoPorId: null, recusadoEm: null, recusadoPorId: null, motivoRecusa: null },
   ]
   administradora: Record<string, any> = {
     id: 'adm-1',
@@ -55,7 +55,7 @@ export class MockDatabaseService {
   configuracoes: Record<string, any> = {
     tenantId: 'cond-1',
     perfil: { nomeCondominio: 'Residencial das Acacias', cep: '70000-000', quadraReferencia: 'Quadra A', enderecoNumero: '10' },
-    reservas: { antecedenciaHoras: 24, cancelamentoHoras: 12, limiteReservasMes: 2 },
+    reservas: { antecedenciaHoras: 24, cancelamentoHoras: 12, limiteReservasMes: 2, tiposEventoPermitidos: ['Aniversario', 'Churrasco em familia', 'Confraternizacao', 'Reuniao esportiva'] },
     financeiro: { diaVencimentoPadrao: 10, multaAtrasoPercentual: 2, jurosMensalPercentual: 1 },
     branding: { corPrimaria: '#1d6fa4', assinaturaAvisos: 'Sindicatura Residencial das Acacias' },
     operacional: { notificacoesInApp: true, avisosDestaqueNaHome: true, permitirUploadMorador: false },

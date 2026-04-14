@@ -35,6 +35,7 @@ export const registerSchema = z
 
 export const reservationSchema = z.object({
   area: z.enum(['salao_festas', 'churrasqueira', 'quadra']),
+  tipoEvento: z.string().min(1, 'Selecione o tipo de evento'),
   dataInicio: z.string().min(1, 'Selecione a data e hora de inicio'),
   dataFim: z.string().min(1, 'Selecione a data e hora de termino'),
   observacoes: z.string().optional(),

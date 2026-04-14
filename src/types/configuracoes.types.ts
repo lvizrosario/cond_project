@@ -9,6 +9,7 @@ export interface ReservationSettings {
   antecedenciaHoras: number
   cancelamentoHoras: number
   limiteReservasMes: number
+  tiposEventoPermitidos: string[]
 }
 
 export interface FinanceSettings {

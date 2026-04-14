@@ -4,6 +4,7 @@ export const mockReservations: Reservation[] = [
   {
     id: 'r1',
     area: 'salao_festas',
+    tipoEvento: 'Aniversario',
     moradorId: '4',
     moradorNome: 'Ana Paula Mendes',
     unidade: 'A-22',
@@ -17,6 +18,7 @@ export const mockReservations: Reservation[] = [
   {
     id: 'r2',
     area: 'churrasqueira',
+    tipoEvento: 'Churrasco em familia',
     moradorId: '3',
     moradorNome: 'Roberto Alves',
     unidade: 'C-03',
@@ -30,6 +32,7 @@ export const mockReservations: Reservation[] = [
   {
     id: 'r3',
     area: 'quadra',
+    tipoEvento: 'Reuniao esportiva',
     moradorId: '5',
     moradorNome: 'Marcos Oliveira',
     unidade: 'D-07',
@@ -43,6 +46,7 @@ export const mockReservations: Reservation[] = [
   {
     id: 'r4',
     area: 'salao_festas',
+    tipoEvento: 'Confraternizacao',
     moradorId: '6',
     moradorNome: 'Juliana Santos',
     unidade: 'B-18',
@@ -56,6 +60,7 @@ export const mockReservations: Reservation[] = [
   {
     id: 'r5',
     area: 'quadra',
+    tipoEvento: 'Reuniao esportiva',
     moradorId: '1',
     moradorNome: 'Carlos Eduardo Lima',
     unidade: 'A-10',
