@@ -11,6 +11,7 @@ export const mockConfiguracoes: TenantSettings = {
     antecedenciaHoras: 24,
     cancelamentoHoras: 12,
     limiteReservasMes: 2,
+    tiposEventoPermitidos: ['Aniversario', 'Churrasco em familia', 'Confraternizacao', 'Reuniao esportiva'],
   },
   financeiro: {
     diaVencimentoPadrao: 10,
