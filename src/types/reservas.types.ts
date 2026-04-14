@@ -1,5 +1,6 @@
 export type AreaCondominio = 'salao_festas' | 'churrasqueira' | 'quadra'
 export type ReservationStatus = 'confirmada' | 'pendente' | 'cancelada'
+export type AvailabilityStatus = 'disponivel' | 'confirmada' | 'pendente' | 'bloqueada'
 
 export const AREA_LABELS: Record<AreaCondominio, string> = {
   salao_festas: 'Salão de Festas',
@@ -24,6 +25,8 @@ export interface Reservation {
   status: ReservationStatus
   observacoes?: string
   criadoEm: string
+  aprovadoEm?: string | null
+  aprovadoPorId?: string | null
 }
 
 export interface CreateReservationPayload {
@@ -33,7 +36,15 @@ export interface CreateReservationPayload {
   observacoes?: string
 }
 
+export interface CalendarDateStatus {
+  date: string
+  status: Exclude<AvailabilityStatus, 'disponivel'>
+  label: string
+  reservationId?: string
+  relatedArea?: AreaCondominio
+}
+
 export interface AreaAvailability {
   area: AreaCondominio
-  datasOcupadas: string[]
+  datas: CalendarDateStatus[]
 }

@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { XCircle } from 'lucide-react'
+import { CheckCircle2, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { ReservationStatusBadge } from '@/components/shared/StatusBadge'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { EmptyState } from '@/components/shared/EmptyState'
-import { useReservations, useMyReservations, useCancelReservation } from '@/hooks/useReservations'
+import { useApproveReservation, useReservations, useMyReservations, useCancelReservation } from '@/hooks/useReservations'
 import { useAuth } from '@/hooks/useAuth'
 import { useRoleAccess } from '@/hooks/useRoleAccess'
 import { formatDate } from '@/lib/formatters'
@@ -23,6 +23,7 @@ export function ReservationList({ area }: ReservationListProps) {
 
   const { data: allReservations } = useReservations(area ?? undefined)
   const { data: myReservations } = useMyReservations(user?.id ?? '')
+  const approve = useApproveReservation()
   const cancel = useCancelReservation()
 
   const myFiltered = myReservations?.filter((r) => !area || r.area === area) ?? []
@@ -34,15 +35,30 @@ export function ReservationList({ area }: ReservationListProps) {
         {reservations.map((r) => (
           <li key={r.id} className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-white p-3">
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm text-[var(--color-text-primary)]">{AREA_LABELS[r.area]}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-medium text-sm text-[var(--color-text-primary)]">{AREA_LABELS[r.area]}</p>
+                {r.status === 'pendente' && (
+                  <span className="text-xs text-[var(--color-warning)]">Aguardando aprovação administrativa</span>
+                )}
+              </div>
               <p className="text-xs text-[var(--color-text-secondary)]">
-                {r.moradorNome} · {formatDate(r.dataInicio, 'dd/MM HH:mm')} – {formatDate(r.dataFim, 'HH:mm')}
+                {r.moradorNome} · {formatDate(r.dataInicio, 'dd/MM HH:mm')} - {formatDate(r.dataFim, 'HH:mm')}
               </p>
             </div>
             <ReservationStatusBadge status={r.status} />
+            {isAdmin && r.status === 'pendente' && (
+              <Button size="sm" variant="outline" className="shrink-0" onClick={() => approve.mutate(r.id)}>
+                <CheckCircle2 className="h-4 w-4" />
+                Aprovar
+              </Button>
+            )}
             {r.status !== 'cancelada' && (r.moradorId === user?.id || isAdmin) && (
-              <Button size="sm" variant="ghost" className="shrink-0 text-[var(--color-danger)] hover:text-[var(--color-danger)]"
-                onClick={() => setCancelId(r.id)}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="shrink-0 text-[var(--color-danger)] hover:text-[var(--color-danger)]"
+                onClick={() => setCancelId(r.id)}
+              >
                 <XCircle className="h-4 w-4" />
               </Button>
             )}

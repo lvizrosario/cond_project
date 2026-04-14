@@ -35,6 +35,16 @@ export function useCreateReservation() {
   })
 }
 
+export function useApproveReservation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => reservasService.approve(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reservas'] })
+    },
+  })
+}
+
 export function useCancelReservation() {
   const queryClient = useQueryClient()
   return useMutation({

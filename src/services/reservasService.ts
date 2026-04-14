@@ -23,6 +23,11 @@ export const reservasService = {
     return data
   },
 
+  approve: async (id: string): Promise<Reservation> => {
+    const { data } = await api.post<Reservation>(`/reservas/${id}/approve`)
+    return data
+  },
+
   cancel: async (id: string): Promise<Reservation> => {
     const { data } = await api.patch<Reservation>(`/reservas/${id}/cancel`)
     return data

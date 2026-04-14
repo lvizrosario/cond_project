@@ -16,10 +16,11 @@ export class MockDatabaseService {
     morador: { inicio: true, acessos: false, administradora: false, avisos: true, configuracoes: false, correspondencias: true, documentos: true, financeiro: true, reservas: true, reunioes: false },
   }
   notifications: Array<Record<string, any>> = [
-    { id: 'n1', titulo: 'Boleto de abril disponível', tenantId: 'cond-1', createdAt: new Date().toISOString() },
+    { id: 'n1', titulo: 'Boleto de abril disponivel', tenantId: 'cond-1', createdAt: new Date().toISOString() },
   ]
+  emailOutbox: Array<Record<string, any>> = []
   avisos: Array<Record<string, any>> = [
-    { id: 'a1', tenantId: 'cond-1', titulo: 'Manutenção preventiva', conteudo: 'Intervenção programada na bomba.', categoria: 'manutencao', audience: 'todos', status: 'publicado', publicadoEm: new Date().toISOString(), criadoPorId: '2' },
+    { id: 'a1', tenantId: 'cond-1', titulo: 'Manutencao preventiva', conteudo: 'Intervencao programada na bomba.', categoria: 'manutencao', audience: 'todos', status: 'publicado', publicadoEm: new Date().toISOString(), criadoPorId: '2' },
   ]
   correspondencias: Array<Record<string, any>> = [
     { id: 'c1', tenantId: 'cond-1', transportadora: 'Correios', destinatarioId: '4', destinatarioNome: 'Ana Paula Mendes', unidade: 'A-22', status: 'recebida', recebidoEm: new Date().toISOString() },
@@ -31,7 +32,12 @@ export class MockDatabaseService {
     { id: 'dv1', documentoId: 'd1', versao: 1, arquivoNome: 'regulamento-interno-v1.pdf', criadoPorNome: 'Carlos Eduardo Lima', criadoEm: new Date().toISOString() },
   ]
   reunioes: Array<Record<string, any>> = [
-    { id: 'r1', tenantId: 'cond-1', titulo: 'Assembleia ordinária', descricao: 'Pauta mensal do condomínio', local: 'Salão de festas', status: 'publicada', dataHora: new Date().toISOString(), agenda: ['Prestação de contas'], participantes: [], ata: null },
+    { id: 'r1', tenantId: 'cond-1', titulo: 'Assembleia ordinaria', descricao: 'Pauta mensal do condominio', local: 'Salao de festas', status: 'publicada', dataHora: new Date().toISOString(), agenda: ['Prestacao de contas'], participantes: [], ata: null },
+  ]
+  reservas: Array<Record<string, any>> = [
+    { id: 'rv1', tenantId: 'cond-1', area: 'salao_festas', moradorId: '4', moradorNome: 'Ana Paula Mendes', unidade: 'A-22', dataInicio: '2026-04-20T14:00:00Z', dataFim: '2026-04-20T22:00:00Z', status: 'confirmada', criadoEm: '2026-04-09T11:15:00Z', aprovadoEm: '2026-04-10T09:00:00Z', aprovadoPorId: '2' },
+    { id: 'rv2', tenantId: 'cond-1', area: 'churrasqueira', moradorId: '3', moradorNome: 'Roberto Alves', unidade: 'C-03', dataInicio: '2026-04-13T11:00:00Z', dataFim: '2026-04-13T17:00:00Z', status: 'confirmada', criadoEm: '2026-04-07T20:10:00Z', aprovadoEm: '2026-04-08T10:00:00Z', aprovadoPorId: '2' },
+    { id: 'rv3', tenantId: 'cond-1', area: 'quadra', moradorId: '1', moradorNome: 'Carlos Eduardo Lima', unidade: 'A-10', dataInicio: '2026-04-18T08:00:00Z', dataFim: '2026-04-18T10:00:00Z', status: 'pendente', criadoEm: '2026-04-12T18:00:00Z', aprovadoEm: null, aprovadoPorId: null },
   ]
   administradora: Record<string, any> = {
     id: 'adm-1',
