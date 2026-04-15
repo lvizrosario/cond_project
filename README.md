@@ -58,6 +58,7 @@ Tambem existe uma base de schema PostgreSQL em `backend/database/schema.sql` par
 git clone https://github.com/lvizrosario/cond_project
 cd cond_dashboard
 npm install
+npm test
 npm run dev
 ```
 
@@ -68,6 +69,7 @@ Acesse `http://localhost:5173`
 ```bash
 cd backend
 npm install
+npm test
 npm run build
 npm run test:e2e
 ```
@@ -186,9 +188,45 @@ backend/
 As seguintes verificacoes ja passaram nesta etapa:
 
 - `npm run lint`
+- `npm test`
 - `npm run build`
+- `cd backend && npm test`
 - `cd backend && npm run build`
 - `cd backend && npm run test:e2e`
+
+---
+
+## CI/CD e merges seguros
+
+O repositorio agora possui um workflow em `.github/workflows/pr-validation.yml` com dois gates independentes:
+
+- `Frontend Quality`: instala dependencias, executa `npm run lint`, `npm test` e `npm run build`
+- `Backend Quality`: instala dependencias, executa `npm run test:unit`, `npm run test:e2e` e `npm run build`
+
+### O que isso resolve na pratica
+
+- Quebra de build no frontend ou no backend bloqueia o PR antes do merge
+- Regras de formulario e funcoes utilitarias do frontend passam a ter regressao coberta por teste
+- Fluxos principais do backend continuam protegidos pelos testes e2e ja existentes
+- Guards de autenticacao e autorizacao recebem validacao unitaria, que costuma detectar regressao mais cedo do que o e2e
+
+### Configuracao recomendada no GitHub
+
+Para transformar o workflow em merge seguro, ative branch protection na branch principal e marque estas opcoes:
+
+1. Require a pull request before merging
+2. Require approvals: pelo menos 1 review
+3. Dismiss stale pull request approvals when new commits are pushed
+4. Require review from Code Owners: opcional, apenas se voce adicionar `CODEOWNERS`
+5. Require status checks to pass before merging
+6. Required checks: `Frontend Quality` e `Backend Quality`
+7. Require branches to be up to date before merging
+8. Require conversation resolution before merging
+9. Restrict who can push directly to `main`
+
+### Sobre o CD
+
+O pipeline entregue aqui cobre o CI completo e o merge seguro. O passo de deploy automatizado nao foi acoplado ainda porque o repositorio nao define o alvo final de publicacao do frontend e do backend. Quando voce decidir a infraestrutura, o caminho correto e adicionar um job de deploy em `push` para `main`, dependente de `Frontend Quality` e `Backend Quality`, apontando para o ambiente real.
 
 ---
 
