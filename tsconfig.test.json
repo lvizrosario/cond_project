@@ -10,5 +10,5 @@
     "skipLibCheck": true,
     "esModuleInterop": true
   },
-  "include": ["tests/**/*.ts", "src/lib/formatters.ts", "src/lib/validators.ts"]
+  "include": ["tests/run-tests.ts", "src/lib/formatters.ts", "src/lib/validators.ts"]
 }
