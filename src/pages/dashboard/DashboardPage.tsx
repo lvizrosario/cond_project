@@ -6,10 +6,12 @@ import { useRoleAccess } from '@/hooks/useRoleAccess'
 import { useAuth } from '@/hooks/useAuth'
 import { useMyReservations } from '@/hooks/useReservations'
 import { useCorrespondencias } from '@/hooks/useCorrespondencias'
+import { useMyBoletos } from '@/hooks/useFinanceiro'
 import { StatCard } from './components/StatCard'
 import { RevenueChart } from './components/RevenueChart'
 import { PaymentStatusList } from './components/PaymentStatusList'
 import { RecentActivityFeed } from './components/RecentActivityFeed'
+import { ResidentFinanceWidget } from './components/ResidentFinanceWidget'
 import { PageSpinner } from '@/components/shared/LoadingSpinner'
 import { formatBRL } from '@/lib/formatters'
 
@@ -20,6 +22,7 @@ export function DashboardPage() {
   const { isAdmin, isMorador, primaryRole } = useRoleAccess()
   const { data: myReservations, isLoading: isLoadingReservations } = useMyReservations(user?.id ?? '')
   const { data: correspondencias, isLoading: isLoadingCorrespondencias } = useCorrespondencias()
+  const { data: myBoletos, isLoading: isLoadingBoletos } = useMyBoletos(user?.id ?? '')
 
   const isResidentOnly = isMorador && !primaryRole
   const canViewSensitiveStats = primaryRole === 'presidente'
@@ -46,7 +49,12 @@ export function DashboardPage() {
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
   }, [data?.recentActivity, user?.id])
 
-  if (isLoading || (isResidentOnly && (isLoadingReservations || isLoadingCorrespondencias)) || !data) {
+  const latestIssuedBoleto = useMemo(() => {
+    const safeBoletos = Array.isArray(myBoletos) ? myBoletos : []
+    return [...safeBoletos].sort((a, b) => new Date(b.dataEmissao).getTime() - new Date(a.dataEmissao).getTime())[0]
+  }, [myBoletos])
+
+  if (isLoading || (isResidentOnly && (isLoadingReservations || isLoadingCorrespondencias || isLoadingBoletos)) || !data) {
     return <PageSpinner />
   }
 
@@ -101,6 +109,15 @@ export function DashboardPage() {
           )
         )}
       </div>
+
+      {isResidentOnly && (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <ResidentFinanceWidget
+            boleto={latestIssuedBoleto}
+            onClick={() => navigate({ to: '/financeiro' })}
+          />
+        </div>
+      )}
 
       {isAdmin && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
