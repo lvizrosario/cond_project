@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { TrendingUp, TrendingDown } from 'lucide-react'
+import { TrendingDown, TrendingUp } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
@@ -9,6 +9,8 @@ interface StatCardProps {
   delta?: { value: number; direction: 'up' | 'down' | 'neutral' }
   icon: LucideIcon
   color: 'blue' | 'green' | 'amber' | 'red'
+  onClick?: () => void
+  hint?: string
 }
 
 const colorMap = {
@@ -18,22 +20,28 @@ const colorMap = {
   red: { bg: 'bg-[var(--color-danger-bg)]', icon: 'text-[var(--color-danger)]' },
 }
 
-export function StatCard({ label, value, delta, icon: Icon, color }: StatCardProps) {
+export function StatCard({ label, value, delta, icon: Icon, color, onClick, hint }: StatCardProps) {
   const { bg, icon: iconColor } = colorMap[color]
-  return (
-    <Card className="p-5">
+
+  const content = (
+    <Card className={cn('p-5', onClick && 'cursor-pointer transition-colors hover:bg-[var(--color-surface)]')}>
       <CardContent className="p-0">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm text-[var(--color-text-secondary)] mb-1">{label}</p>
+            <p className="mb-1 text-sm text-[var(--color-text-secondary)]">{label}</p>
             <p className="font-display text-2xl font-semibold text-[var(--color-text-primary)]">{value}</p>
             {delta && (
-              <div className={cn('flex items-center gap-1 mt-1 text-xs font-medium',
-                delta.direction === 'up' ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]')}>
+              <div
+                className={cn(
+                  'mt-1 flex items-center gap-1 text-xs font-medium',
+                  delta.direction === 'up' ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]',
+                )}
+              >
                 {delta.direction === 'up' ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                <span>{Math.abs(delta.value)}% vs mês anterior</span>
+                <span>{Math.abs(delta.value)}% vs mes anterior</span>
               </div>
             )}
+            {hint && <p className="mt-2 text-xs text-[var(--color-text-muted)]">{hint}</p>}
           </div>
           <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', bg)}>
             <Icon className={cn('h-5 w-5', iconColor)} />
@@ -41,5 +49,13 @@ export function StatCard({ label, value, delta, icon: Icon, color }: StatCardPro
         </div>
       </CardContent>
     </Card>
+  )
+
+  if (!onClick) return content
+
+  return (
+    <button type="button" onClick={onClick} className="text-left">
+      {content}
+    </button>
   )
 }

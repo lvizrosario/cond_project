@@ -23,10 +23,11 @@ export const mockDashboardData: DashboardData = {
     { moradorId: '6', moradorNome: 'Juliana Santos', unidade: 'B-18', valor: 400, status: 'pago', vencimento: '2026-04-05' },
   ],
   recentActivity: [
-    { id: 'a1', tipo: 'pagamento', descricao: 'Carlos Eduardo Lima realizou pagamento de abril', timestamp: '2026-04-09T14:32:00Z' },
-    { id: 'a2', tipo: 'reserva', descricao: 'Ana Paula Mendes reservou o Salão de Festas para 20/04', timestamp: '2026-04-09T11:15:00Z' },
-    { id: 'a3', tipo: 'pagamento', descricao: 'Juliana Santos realizou pagamento de abril', timestamp: '2026-04-08T16:45:00Z' },
-    { id: 'a4', tipo: 'aviso', descricao: 'Novo aviso publicado: Manutenção da piscina', timestamp: '2026-04-08T09:00:00Z' },
-    { id: 'a5', tipo: 'reserva', descricao: 'Roberto Alves reservou a Churrasqueira para 13/04', timestamp: '2026-04-07T20:10:00Z' },
+    { id: 'a1', tipo: 'pagamento', descricao: 'Carlos Eduardo Lima realizou pagamento de abril', timestamp: '2026-04-09T14:32:00Z', userId: '1' },
+    { id: 'a2', tipo: 'reserva', descricao: 'Ana Paula Mendes reservou o Salao de Festas para 20/04', timestamp: '2026-04-09T11:15:00Z', userId: '4' },
+    { id: 'a3', tipo: 'pagamento', descricao: 'Juliana Santos realizou pagamento de abril', timestamp: '2026-04-08T16:45:00Z', userId: '6' },
+    { id: 'a4', tipo: 'aviso', descricao: 'Novo aviso publicado: Manutencao da piscina', timestamp: '2026-04-08T09:00:00Z' },
+    { id: 'a5', tipo: 'reserva', descricao: 'Roberto Alves reservou a Churrasqueira para 13/04', timestamp: '2026-04-07T20:10:00Z', userId: '3' },
+    { id: 'a6', tipo: 'correspondencia', descricao: 'Ana Paula Mendes recebeu uma correspondencia na portaria', timestamp: '2026-04-12T16:20:00Z', userId: '4' },
   ],
 }

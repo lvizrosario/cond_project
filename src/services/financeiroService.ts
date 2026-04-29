@@ -4,12 +4,12 @@ import type { Boleto, PaymentSummary } from '@/types/financeiro.types'
 export const financeiroService = {
   getMyBoletos: async (moradorId: string): Promise<Boleto[]> => {
     const { data } = await api.get<Boleto[]>('/financeiro/boletos', { params: { moradorId } })
-    return data
+    return Array.isArray(data) ? data : []
   },
 
   getAllBoletos: async (): Promise<Boleto[]> => {
     const { data } = await api.get<Boleto[]>('/financeiro/boletos')
-    return data
+    return Array.isArray(data) ? data : []
   },
 
   getSummary: async (): Promise<PaymentSummary> => {

@@ -108,6 +108,36 @@ create table documento_versions (
   created_at timestamptz not null default now()
 );
 
+create table reservas (
+  id bigserial primary key,
+  tenant_id text not null references tenants(id),
+  area text not null,
+  tipo_evento text not null,
+  morador_id text not null references users(id),
+  data_inicio timestamptz not null,
+  data_fim timestamptz not null,
+  status text not null,
+  observacoes text,
+  aprovado_em timestamptz,
+  aprovado_por text references users(id),
+  recusado_em timestamptz,
+  recusado_por text references users(id),
+  motivo_recusa text,
+  criado_em timestamptz not null default now()
+);
+
+create table reservation_email_outbox (
+  id bigserial primary key,
+  tenant_id text not null references tenants(id),
+  reserva_id bigint references reservas(id),
+  recipient_email text not null,
+  subject text not null,
+  body text not null,
+  type text not null,
+  created_at timestamptz not null default now(),
+  sent_at timestamptz
+);
+
 create table reunioes (
   id bigserial primary key,
   tenant_id text not null references tenants(id),

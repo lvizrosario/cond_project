@@ -13,6 +13,9 @@ export function useUpdateConfiguracoes() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (payload: TenantSettings) => configuracoesService.update(payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['configuracoes'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['configuracoes'] })
+      queryClient.invalidateQueries({ queryKey: ['reservas', 'options'] })
+    },
   })
 }

@@ -11,7 +11,8 @@ const PAYMENT_CONFIG: Record<PaymentStatus, { label: string; variant: 'success' 
 
 const RESERVATION_CONFIG: Record<ReservationStatus, { label: string; variant: 'success' | 'warning' | 'danger' | 'outline' }> = {
   confirmada: { label: 'Confirmada', variant: 'success' },
-  pendente: { label: 'Pendente', variant: 'warning' },
+  pendente: { label: 'Pendente de aprovacao', variant: 'warning' },
+  recusada: { label: 'Recusada', variant: 'danger' },
   cancelada: { label: 'Cancelada', variant: 'outline' },
 }
 
