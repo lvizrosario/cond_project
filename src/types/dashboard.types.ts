@@ -18,9 +18,10 @@ export interface RecentPaymentItem {
 
 export interface ActivityItem {
   id: string
-  tipo: 'pagamento' | 'reserva' | 'aviso' | 'cadastro'
+  tipo: 'pagamento' | 'reserva' | 'aviso' | 'cadastro' | 'correspondencia'
   descricao: string
   timestamp: string
+  userId?: string
 }
 
 export interface DashboardData {
