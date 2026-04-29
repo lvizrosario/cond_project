@@ -27,13 +27,14 @@ export function DashboardPage() {
   const myReservationsThisMonth = useMemo(() => {
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    return (myReservations ?? []).filter((item) => new Date(item.dataInicio) >= startOfMonth).length
+    const safeMyReservations = Array.isArray(myReservations) ? myReservations : []
+    return safeMyReservations.filter((item) => new Date(item.dataInicio) >= startOfMonth).length
   }, [myReservations])
 
-  const myPendingCorrespondencias = useMemo(
-    () => (correspondencias ?? []).filter((item) => item.destinatarioId === user?.id && item.status === 'recebida'),
-    [correspondencias, user?.id],
-  )
+  const myPendingCorrespondencias = useMemo(() => {
+    const safeCorrespondencias = Array.isArray(correspondencias) ? correspondencias : []
+    return safeCorrespondencias.filter((item) => item.destinatarioId === user?.id && item.status === 'recebida')
+  }, [correspondencias, user?.id])
 
   const residentActivities = useMemo(() => {
     const threshold = new Date()

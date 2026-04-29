@@ -5,12 +5,12 @@ export const reservasService = {
   getAll: async (area?: AreaCondominio): Promise<Reservation[]> => {
     const params = area ? { area } : {}
     const { data } = await api.get<Reservation[]>('/reservas', { params })
-    return data
+    return Array.isArray(data) ? data : []
   },
 
   getMine: async (moradorId: string): Promise<Reservation[]> => {
     const { data } = await api.get<Reservation[]>('/reservas', { params: { moradorId } })
-    return data
+    return Array.isArray(data) ? data : []
   },
 
   getAvailability: async (area: AreaCondominio): Promise<AreaAvailability> => {
