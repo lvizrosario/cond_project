@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { AlertTriangle, Calendar, DollarSign, Package, Users } from 'lucide-react'
+import { AlertTriangle, Calendar, DollarSign, Users } from 'lucide-react'
 import { useDashboard } from '@/hooks/useDashboard'
 import { useRoleAccess } from '@/hooks/useRoleAccess'
 import { useAuth } from '@/hooks/useAuth'
@@ -11,7 +11,9 @@ import { StatCard } from './components/StatCard'
 import { RevenueChart } from './components/RevenueChart'
 import { PaymentStatusList } from './components/PaymentStatusList'
 import { RecentActivityFeed } from './components/RecentActivityFeed'
+import { ResidentCorrespondenciasWidget } from './components/ResidentCorrespondenciasWidget'
 import { ResidentFinanceWidget } from './components/ResidentFinanceWidget'
+import { ResidentReservationsWidget } from './components/ResidentReservationsWidget'
 import { PageSpinner } from '@/components/shared/LoadingSpinner'
 import { formatBRL } from '@/lib/formatters'
 
@@ -27,16 +29,11 @@ export function DashboardPage() {
   const isResidentOnly = isMorador && !primaryRole
   const canViewSensitiveStats = primaryRole === 'presidente'
 
-  const myReservationsThisMonth = useMemo(() => {
-    const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const safeMyReservations = Array.isArray(myReservations) ? myReservations : []
-    return safeMyReservations.filter((item) => new Date(item.dataInicio) >= startOfMonth).length
-  }, [myReservations])
-
   const myPendingCorrespondencias = useMemo(() => {
     const safeCorrespondencias = Array.isArray(correspondencias) ? correspondencias : []
-    return safeCorrespondencias.filter((item) => item.destinatarioId === user?.id && item.status === 'recebida')
+    return safeCorrespondencias
+      .filter((item) => item.destinatarioId === user?.id && item.status === 'recebida')
+      .sort((a, b) => new Date(b.recebidoEm).getTime() - new Date(a.recebidoEm).getTime())
   }, [correspondencias, user?.id])
 
   const residentActivities = useMemo(() => {
@@ -54,51 +51,46 @@ export function DashboardPage() {
     return [...safeBoletos].sort((a, b) => new Date(b.dataEmissao).getTime() - new Date(a.dataEmissao).getTime())[0]
   }, [myBoletos])
 
+  const latestReservation = useMemo(() => {
+    const safeMyReservations = Array.isArray(myReservations) ? myReservations : []
+    return [...safeMyReservations].sort((a, b) => new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime())[0]
+  }, [myReservations])
+
   if (isLoading || (isResidentOnly && (isLoadingReservations || isLoadingCorrespondencias || isLoadingBoletos)) || !data) {
     return <PageSpinner />
   }
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {canViewSensitiveStats && (
-          <>
-            <StatCard
-              label="Total de Moradores"
-              value={String(data.stats.totalMoradores)}
-              icon={Users}
-              color="blue"
-              delta={{ value: 4, direction: 'up' }}
-            />
-            <StatCard
-              label="Inadimplentes"
-              value={String(data.stats.inadimplentes)}
-              icon={AlertTriangle}
-              color="red"
-              delta={{ value: 1, direction: 'down' }}
-            />
-          </>
-        )}
+      {(canViewSensitiveStats || isAdmin) && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {canViewSensitiveStats && (
+            <>
+              <StatCard
+                label="Total de Moradores"
+                value={String(data.stats.totalMoradores)}
+                icon={Users}
+                color="blue"
+                delta={{ value: 4, direction: 'up' }}
+              />
+              <StatCard
+                label="Inadimplentes"
+                value={String(data.stats.inadimplentes)}
+                icon={AlertTriangle}
+                color="red"
+                delta={{ value: 1, direction: 'down' }}
+              />
+            </>
+          )}
 
-        <StatCard
-          label={isResidentOnly ? 'Minhas Reservas no Mes' : 'Reservas este Mes'}
-          value={String(isResidentOnly ? myReservationsThisMonth : data.stats.reservasEsseMes)}
-          icon={Calendar}
-          color="amber"
-          hint={isResidentOnly ? 'Mostra apenas as suas reservas e solicitacoes.' : undefined}
-        />
-
-        {isResidentOnly && myPendingCorrespondencias.length > 0 ? (
           <StatCard
-            label="Correspondencias Pendentes"
-            value={String(myPendingCorrespondencias.length)}
-            icon={Package}
-            color="blue"
-            hint="Clique para abrir o menu de correspondencias."
-            onClick={() => navigate({ to: '/correspondencias' })}
+            label="Reservas este Mes"
+            value={String(data.stats.reservasEsseMes)}
+            icon={Calendar}
+            color="amber"
           />
-        ) : (
-          isAdmin && (
+
+          {isAdmin && (
             <StatCard
               label="Receita do Mes"
               value={formatBRL(data.stats.receitaMesAtual)}
@@ -106,15 +98,23 @@ export function DashboardPage() {
               color="green"
               delta={{ value: 4.2, direction: 'down' }}
             />
-          )
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {isResidentOnly && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="grid auto-rows-fr grid-cols-1 gap-6 lg:grid-cols-3">
           <ResidentFinanceWidget
             boleto={latestIssuedBoleto}
             onClick={() => navigate({ to: '/financeiro' })}
+          />
+          <ResidentReservationsWidget
+            reservation={latestReservation}
+            onClick={() => navigate({ to: '/reservas' })}
+          />
+          <ResidentCorrespondenciasWidget
+            correspondencias={myPendingCorrespondencias}
+            onClick={() => navigate({ to: '/correspondencias' })}
           />
         </div>
       )}
